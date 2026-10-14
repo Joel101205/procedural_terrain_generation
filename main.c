@@ -1,8 +1,10 @@
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
 #include <string.h>
+#include <unistd.h>
 
 int isPowerOfTwo(int x) {
   return (x != 0) && ((x & (x - 1)) == 0);
@@ -164,17 +166,64 @@ void generate_terrain(int size, float roughness, float *heightMap) {
   generate(size, roughness, heightMap);
 }
 
+// display help message if the option -H is given
+void display_help_message() {
+  printf("Help Message\n");
+  printf("This program procedurally generates a terrain, using the diamond-square-algorithm.\n");
+  printf("The output is stored in a .obj-file.\n");
+  printf("Input options:\n");
+  printf("-s (int):             resolution/amount of vertices; most be 2^n + 1.\n");
+  printf("-x (float):           width of the terrain.\n");
+  printf("-y (float):           depth of the terrain.\n");
+  printf("-h (float):           height of the terrain.\n");
+  printf("-r (float):           controls the magnitude of the random Gaussian displacement added during each iteration.\n");
+  printf("                      high roughness value: greater random displacement.\n");
+  printf("-o (String)           name of the output file.\n");
+  printf("-H                    display help message.\n");
+  printf("Default input:        ./diamond_square -s 129 -x 4.0 -y 4.0 -h 1.0 -r 1.0 -o terrain.obj\n");
+}
+
 
 int main(int argc, char *argv[])
 {
   srand((unsigned)time(NULL));
 
-  int size = 129;
-  float xScale = 4.0f;
-  float yScale = 4.0f;
-  float heightScale = 1.0f;
-  float roughness = 1.0f;
-  char filename[] = "terrain.obj";
+  int size = 129;  // -s resolution: how many vertices/details  
+  float xScale = 4.0f;  // -x width
+  float yScale = 4.0f;  // -y depth
+  float heightScale = 1.0f; // -h height
+  float roughness = 1.0f; // -r controls how quickly the random displacement decreases (higher roughness = smoother terrain)
+  char *filename = "terrain.obj"; // -o name of the output file
+
+  int opt;
+  while ((opt = getopt(argc, argv, "s:x:y:h:r:o:H")) != -1) {
+    switch (opt) {
+      case 's':
+        size = atoi(optarg);
+        break;
+      case 'x':
+        xScale = atof(optarg);
+        break;
+      case 'y':
+        yScale = atof(optarg);
+        break;
+      case 'h':
+        heightScale = atof(optarg);
+        break;
+      case 'r':
+        roughness = 1 / atof(optarg);
+        break;
+      case 'o':
+        filename = optarg;
+        break;
+      case 'H':
+        display_help_message();
+        break;
+      default:
+        printf("No valid input, using default values. Use -H to see input options.");
+        break;
+    }
+  }
 
   if (!isPowerOfTwo(size-1)) {
     printf("Size must be 2^n + 1");
